@@ -13,7 +13,7 @@ metadata:
   version: 2.7.0
   based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
   v2.7-changes:
-    - "2026-06-05 — Estrutura corrigida: .specs/project/ + .specs/features/[name]/ (igual L-Spec PI)"
+    - "2026-06-05 — Estrutura corrigida: .specs/project/{STATE,PROJECT,ROADMAP}.md + .specs/features/[name]/ (igual L-Spec PI). Pipeline sequencial fixo como RPIV. Research = análise do codebase (não perguntas ao usuário). Single entry point /xfdd [request] com auto-advance. Discovery projeto novo: 17 perguntas em 6 fases. Bugs/fixes em features/ com prefixo fix-/bug-."
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -107,6 +107,8 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ║  Specify    → .specs/features/[name]/spec.md  → Tasks                ║
 ║  Tasks      → .specs/features/[name]/tasks.md → Execute              ║
 ║  Execute    → working-tree changes     → Validate                   ║
+║                                                                      ║
+║  Projeto-level docs: .specs/project/{STATE,PROJECT,ROADMAP}.md     ║
 ║                                                                      ║
 ╠══════════════════════════════════════════════════════════════════════╣
 ║  ⚠️  Se artifact da fase anterior NÃO EXISTE → BLOQUEIA.            ║
@@ -208,7 +210,7 @@ Ao carregar a skill, classifique o que a Lua descreveu:
 | "pequeno", "ajuste", "mudar isso", "corrigir só" | **Mudança pequena** | Fluxo 5 |
 | Nenhuma acima | **Perguntar** | "Você quer criar projeto,feature,fix bug ou reverter projeto existente?" |
 
-**Se projeto existe** → detectar `.fdd/state.md` e usar como base antes de perguntar.
+Se projeto existe → detectar `.specs/project/STATE.md` e usar como base antes de perguntar.
 
 ### Fluxos por tipo
 
@@ -367,7 +369,7 @@ Se escopo mudar no meio, pausar e **replanejar tasks**.
 ║  □  spec.md foi lida e compreendida ("Contexto lido")         ║
 ║  □  Arquivos a editar estão listados na spec ou tasks          ║
 ║  □  Mudança proposta NÃO foge do escopo da spec                ║
-║  □  .fdd/state.md foi atualizado na última fase                ║
+║  □  .specs/project/STATE.md foi atualizado na última fase                ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║ ⚠️  Se ANY □ = false → BLOQUEIA. Não edita. Pergunta.        ║
 ╚══════════════════════════════════════════════════════════════════╝
@@ -432,7 +434,7 @@ Não pode encerrar sem evidência de:
 ╔══════════════════════════════════════════════════════════════════╗
 ║  GATE: STATE SAVED — antes de iniciar nova fase                 ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  □  .fdd/state.md existe                                        ║
+║  □  .specs/project/STATE.md existe                                ║
 ║  □  Última fase registrada (ex: "Tarefas T1-T3 completas")     ║
 ║  □  Pendências atualizadas                                      ║
 ║  □  Commits feitos (se aplicável)                              ║
@@ -454,7 +456,7 @@ Não pode encerrar sem evidência de:
 
 ```
 [Estado da Fase: <nome>]
-□ .fdd/state.md atualizado com:
+□ .specs/project/STATE.md atualizado com:
   - Fase atual e status
   - Tarefas completadas
   - Pendências
@@ -508,7 +510,7 @@ Research analiza o **código existente**, não faz perguntas para o usuário.
 
 Para projeto existente sem specs:
 
-1. verificar `.fdd/state.md` (se existir, usar como base)
+1. verificar `.specs/project/STATE.md` (se existir, usar como base)
 2. scan de estrutura
 3. análise de módulos/rotas/models
 4. agrupamento por feature
@@ -524,9 +526,9 @@ Se houver models ORM, validar consistência com schema real quando aplicável.
 
 1. Nada fora da spec
 2. Sempre reler spec antes de implementar
-3. **Preflight obrigatório de contexto antes de codar:** ler a pasta `.fdd/` inteira (no mínimo `state.md`, `map.md` se existir, specs e tasks da feature-alvo) e responder com "Contexto lido" + lista dos arquivos lidos + resumo em 3 bullets do entendimento. Sem isso, não implementar. **Isto alimenta o item □ "Contexto lido" do Compliance Gate.**
+3. **Preflight obrigatório de contexto antes de codar:** ler a pasta `.specs/` inteira (no mínimo `STATE.md`, specs e tasks da feature-alvo) e responder com "Contexto lido" + lista dos arquivos lidos + resumo em 3 bullets do entendimento. Sem isso, não implementar. **Isto alimenta o item □ "Contexto lido" do Compliance Gate.**
 4. **Compliance Gate é BLOQUEANTE — ANTES de qualquer edit**, verificar checklist (spec existe, lida, arquivos listados, dentro do escopo, state atualizado). Se qualquer □ = false → para e pergunta.
-5. **A pasta `.fdd/` deve ser versionada no Git e subir para o repositório remoto.** Não ignorar `.fdd/` no `.gitignore`.
+5. **A pasta `.specs/` deve ser versionada no Git e subir para o repositório remoto.** Não ignorar `.specs/` no `.gitignore`. State vai em `.specs/project/STATE.md`, artifacts em `.specs/features/[name]/`.
 6. **Nunca versionar nem subir `.env` (ou qualquer arquivo de segredo).** Garantir `.env*` no `.gitignore` (mantendo apenas exemplos como `.env.example`).
 7. **Usar o máximo de subagentes possível em todo o fluxo FDD** (dentro dos limites da plataforma), priorizando paralelismo; só executar sequencial quando houver dependência estrita.
 8. Sem pular fases obrigatórias
@@ -535,8 +537,8 @@ Se houver models ORM, validar consistência com schema real quando aplicável.
 11. Se escopo mudar, replanejar antes de continuar
 12. State sempre atualizado
 13. Se não há evidência de teste/validação, não está concluído
-14. **NUNCA editar arquivo sem ter passado no Compliance Gate**
-
+- **NUNCA editar arquivo sem ter passado no Compliance Gate**
+- **State saving = `.specs/project/STATE.md` — OBRIGATÓRIO entre fases, não opcional**
 ---
 
 ## Formato de resposta operacional
@@ -613,7 +615,7 @@ Aguardando: decisão da Lua antes de editar
 - **Compliance Gate sem State Saving — state fica pendente entre fases**
 - **NÃO existe pasta `fixes/`** — bugs e ajustes usam prefixo `fix-`/`bug-` em `features/`
 - **Feature existente = atualizar docs e continuar** — não reiniciar pipeline, não recriar estrutura
-- **Estrutura de feature é `features/[name]/`** — não `.fdd/features/[name]/`. Testado e confirmado em produção: artefatos (spec.md, tasks.md, research.md) vão dentro de `features/[name]/`, state do projeto vai em `.fdd/state.md`
+- **Estrutura de feature é `.specs/features/[name]/`** — não `.fdd/features/[name]/`. Testado e confirmado em produção: artefatos (spec.md, tasks.md, research.md) vão dentro de `.specs/features/[name]/`, state do projeto vai em `.specs/project/STATE.md`
 
 ---
 
