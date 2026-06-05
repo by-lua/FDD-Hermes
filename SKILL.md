@@ -10,10 +10,12 @@ description: >-
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
   author: Lua (Hermes Agent)
-  version: 2.7.0
+  version: 2.7.2
   based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
   v2.7-changes:
     - "2026-06-05 — Estrutura corrigida: .specs/project/{STATE,PROJECT,ROADMAP}.md + .specs/features/[name]/ (igual L-Spec PI). Pipeline sequencial fixo como RPIV. Research = análise do codebase (não perguntas ao usuário). Single entry point /xfdd [request] com auto-advance. Discovery projeto novo: 17 perguntas em 6 fases. Bugs/fixes em features/ com prefixo fix-/bug-."
+    - "2026-06-05 v2.7.2 — SPEC Enforcement: mudança ocorre → verificar se spec existe em .specs/features/[name]/. Se sim → atualizar existente. Se não → criar nova. NUNCA criar spec duplicada."
+    - "2026-06-05 v2.7.2 — Project docs: mudanças estruturais devem atualizar .specs/project/{PROJECT.md, ROADMAP.md}."
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -539,6 +541,8 @@ Se houver models ORM, validar consistência com schema real quando aplicável.
 13. Se não há evidência de teste/validação, não está concluído
 - **NUNCA editar arquivo sem ter passado no Compliance Gate**
 - **State saving = `.specs/project/STATE.md` — OBRIGATÓRIO entre fases, não opcional**
+- **SPEC Enforcement: mudança ocorre → verificar se já existe spec em `.specs/features/[name]/`. Se sim → atualizar existente. Se não → criar nova. NUNCA criar spec duplicada.**
+- **Project docs: mudanças estruturais → atualizar `.specs/project/PROJECT.md` e `.specs/project/ROADMAP.md`.**
 ---
 
 ## Formato de resposta operacional
