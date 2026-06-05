@@ -10,10 +10,10 @@ description: >-
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
   author: Lua (Hermes Agent)
-  version: 2.6.0
+  version: 2.7.0
   based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
-  v2.6-changes:
-    - "2026-06-05 — Research obrigatório (RPIV-PI insight): análise do codebase antes de Specify. Impede 'inventar' soluções que não existem."
+  v2.7-changes:
+    - "2026-06-05 — Estrutura corrigida: .specs/project/ + .specs/features/[name]/ (igual L-Spec PI)"
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -22,22 +22,21 @@ metadata:
 
 ## Objetivo desta versão
 
-Esta versão adapta o funcionamento do **L-Spec PI adaptivo** para o Hermes,
-com **uma única simplificação intencional**:
+Esta versão é o **L-Spec PI adaptado para o Hermes**, com o mesmo pipeline sequencial fixo.
 
-- **Discovery de projeto novo reduzido** (mais curto)
+Todo o fluxo segue a disciplina completa:
 
-Todo o resto segue a mesma disciplina de execução:
-
-- Discovery adaptativo por tipo
-- Clarify/Sanity quando houver ambiguidades
-- Spec testável
+- Discovery adaptativo por tipo (projeto novo = 17 perguntas em 6 fases)
+- Research obrigatório (análise do codebase, não perguntas ao usuário)
+- Specify testável
 - Design quando necessário
 - Tasks rastreáveis
 - Execute com **Gate de validação obrigatório**
 - **Compliance Gate BLOQUEANTE antes de qualquer edit**
 - **Autosave OBRIGATÓRIO entre fases**
 - State atualizado ao final
+
+**Single entry point:** `/xfdd [request]` — o sistema auto-avança por todas as fases, salvando estado após cada uma.
 
 ---
 
@@ -103,10 +102,10 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ║                                                                      ║
 ║  Pipeline → Produz → Feeds → Próxima                               ║
 ║                                                                      ║
-║  Discovery  → .fdd/state.md           → Research                   ║
-║  Research   → features/[name]/research.md → Specify                ║
-║  Specify    → features/[name]/spec.md  → Tasks                     ║
-║  Tasks      → features/[name]/tasks.md → Execute                  ║
+║  Discovery  → .specs/project/STATE.md  → Research                   ║
+║  Research   → .specs/features/[name]/research.md → Specify          ║
+║  Specify    → .specs/features/[name]/spec.md  → Tasks                ║
+║  Tasks      → .specs/features/[name]/tasks.md → Execute              ║
 ║  Execute    → working-tree changes     → Validate                   ║
 ║                                                                      ║
 ╠══════════════════════════════════════════════════════════════════════╣
@@ -121,7 +120,7 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ```
 [ENFORCED] ✗ Execute BLOQUEADO
 
-Artifact necessário: features/minha-feature/tasks.md (de Tasks)
+Artifact necessário: .specs/features/minha-feature/tasks.md (de Tasks)
 Artifact encontrado: ❌ NÃO EXISTE
 
 ⚠️  Execute não pode rodar sem tasks.md.
@@ -131,7 +130,7 @@ Artifact encontrado: ❌ NÃO EXISTE
 ```
 [ENFORCED] ✗ Tasks BLOQUEADO
 
-Artifact necessário: features/minha-feature/spec.md (de Specify)
+Artifact necessário: .specs/features/minha-feature/spec.md (de Specify)
 Artifact encontrado: ❌ NÃO EXISTE
 
 ⚠️  Tasks não pode rodar sem spec.md.
@@ -213,18 +212,49 @@ Ao carregar a skill, classifique o que a Lua descreveu:
 
 ### Fluxos por tipo
 
-#### 1) Projeto novo (`/xfdd new`) — 6 perguntas
+#### 1) Projeto novo (`/xfdd new`) — 17 perguntas em 6 fases
 
-Perguntas obrigatórias (reduzidas):
+**FASE 1: Contexto e Problema**
+1. Qual o objetivo do projeto? (1 frase)
+2. Que problema resolve? Quem tem esse problema?
+3. Como sabe que é problema real?
+4. O que acontece se não construir?
 
-1. **Objetivo** — o que o projeto entrega? (1 frase)
-2. **Público/problema** — para quem e qual dor resolve?
-3. **MVP** — mínimo que precisa funcionar para lançar
-4. **Stack/restrições** — linguagem/framework/banco e limites técnicos
-5. **Deploy alvo** — onde vai rodar (Coolify, VPS, etc.)
-6. **Fora de escopo agora**
+> CONFIRME antes de continuar
 
-> Após essas 6, segue direto para Specify.
+**FASE 2: Visão e Escopo**
+5. Como define sucesso?
+6. O que é o MVP?
+7. O que está fora do escopo?
+8. Quem é o usuário-alvo?
+
+> CONFIRME antes de continuar
+
+**FASE 3: Stack Técnica**
+9. Qual linguagem/framework?
+10. Código existente para integrar?
+11. Restrições (orçamento, equipe, prazo)?
+
+> CONFIRME antes de continuar
+
+**FASE 4: Referências**
+12. Alguma referência de design? (Figma, screenshots, sites)
+13. Preferências de design? (estilo, tons, layout)
+
+> CONFIRME antes de continuar
+
+**FASE 5: Riscos**
+14. O que já foi tentado antes?
+15. Qual o maior risco?
+16. Parte mais difícil?
+
+> CONFIRME antes de continuar
+
+**FASE 6: Marcos**
+17. Como dividir em etapas?
+18. Primeira coisa que funciona?
+
+> Após essas 18 perguntas, segue para Research.
 
 #### 2) Projeto existente sem `.fdd/` (Reverse primeiro)
 
@@ -272,7 +302,7 @@ Sem clareza, não avança.
 
 ## Specify (obrigatório)
 
-Criar `features/<feature>/spec.md` com:
+Criar `.specs/features/<feature>/spec.md` com:
 
 - Objetivo
 - Requisitos funcionais numerados e testáveis
@@ -306,7 +336,7 @@ impacto em dados/contratos.
 
 ## Tasks (obrigatório)
 
-Criar `features/<feature>/tasks.md` com tarefas atômicas:
+Criar `.specs/features/<feature>/tasks.md` com tarefas atômicas:
 
 - o que fazer
 - onde fazer
@@ -333,7 +363,7 @@ Se escopo mudar no meio, pausar e **replanejar tasks**.
 ╔══════════════════════════════════════════════════════════════════╗
 ║  GATE: COMPLIANCE CHECK — antes de cada tarefa                 ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  □  features/<feature>/spec.md existe                     ║
+║  □  .specs/features/<feature>/spec.md existe                     ║
 ║  □  spec.md foi lida e compreendida ("Contexto lido")         ║
 ║  □  Arquivos a editar estão listados na spec ou tasks          ║
 ║  □  Mudança proposta NÃO foge do escopo da spec                ║
@@ -468,7 +498,7 @@ Research analiza o **código existente**, não faz perguntas para o usuário.
 - "Quem chama essa função?"
 - "Qual pattern esse código usa?"
 
-**Output:** `features/[name]/research.md`
+**Output:** `.specs/features/[name]/research.md`
 
 **Sem artifact = BLOQUEIA Specify.**
 
@@ -582,7 +612,8 @@ Aguardando: decisão da Lua antes de editar
 - **EDITAR NO DIRETÓRIO ERRADO — editar SEMPRE no clone git (ex: ~/.pi/agent/git/github.com/by-lua/<REPO>/), nunca em ~/.hermes/profiles/luna/skills/ que não é git e não vai pro remote**
 - **Compliance Gate sem State Saving — state fica pendente entre fases**
 - **NÃO existe pasta `fixes/`** — bugs e ajustes usam prefixo `fix-`/`bug-` em `features/`
-- **Feature existente = atualizar docs e continuar** — não reiniciar pipeline
+- **Feature existente = atualizar docs e continuar** — não reiniciar pipeline, não recriar estrutura
+- **Estrutura de feature é `features/[name]/`** — não `.fdd/features/[name]/`. Testado e confirmado em produção: artefatos (spec.md, tasks.md, research.md) vão dentro de `features/[name]/`, state do projeto vai em `.fdd/state.md`
 
 ---
 
@@ -595,8 +626,8 @@ Aguardando: decisão da Lua antes de editar
 ## Compatibilidade e transição
 
 - Comandos via `/xfdd` (aliases `/fdd` também funcionam)
-- Fluxo interno segue disciplina L-Spec PI adaptiva
-- Discovery de projeto novo: 6 perguntas (enxuto)
+- Fluxo interno segue disciplina L-Spec PI — mesmo pipeline, não simplificado
+- Discovery de projeto novo: **17 perguntas em 6 fases** (não 6-enxuto)
 - Hermes tools: `agent-lsp` (não pi-cymbal)
 - Compliance Gate: bloqueante antes de cada tarefa (5 itens)
 
