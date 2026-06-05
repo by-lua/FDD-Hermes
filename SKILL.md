@@ -9,8 +9,8 @@ description: >-
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
   author: Lua (Hermes Agent)
-  version: 2.3.0
-  based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante)
+  version: 2.4.0
+  based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases)
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -284,6 +284,7 @@ Se escopo mudar no meio, pausar e **replanejar tasks**.
 - ❌ Pular tarefas — implementar todas listadas
 - ❌ Sair sem evidência de teste rodado
 - ❌ Editar sem passar no Compliance Gate
+- ❌ Não salvar `.fdd/state.md` — autosave é obrigatório, não opcional
 
 **Regra operacional obrigatória:** durante o Execute, usar o **máximo de subagentes possível** (dentro dos limites da plataforma) para implementar, revisar e validar em paralelo. Só executar de forma sequencial quando houver dependência estrita entre etapas.
 
@@ -295,13 +296,15 @@ Ciclo por tarefa:
 3. **GREEN** — implementação mínima
 4. **GATE CHECK** — executar validações
 5. **Review** — checar aderência à spec
-6. próxima tarefa
+6. **AUTOSAVE** — salvar `.fdd/state.md` com T[X] completo (OBRIGATÓRIO)
+7. próxima tarefa
 
 ### Gate mínimo para concluir
 
 Não pode encerrar sem evidência de:
 
 - **Compliance Gate verificado** (todos os 5 □ = true) — **por cada tarefa**
+- **Autosave feito** (`.fdd/state.md` atualizado com T[X] completo)
 - testes executados (comando + resultado)
 - validação funcional da regra principal
 - arquivos alterados
@@ -309,7 +312,53 @@ Não pode encerrar sem evidência de:
 
 ---
 
-## State (sempre atualizar)
+## State (sempre atualizar) — OBRIGATÓRIO
+
+**State saving NÃO é opcional.** É parte do pipeline, não uma nota pessoal.
+
+### GATE: Estado Salvo Entre Fases
+
+**Antes de iniciar qualquer fase nova, verificar se a fase anterior salvou `.fdd/state.md`:**
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  GATE: STATE SAVED — antes de iniciar nova fase                 ║
+╠══════════════════════════════════════════════════════════════════╣
+║  □  .fdd/state.md existe ║
+║  □  Última fase registrada (ex: "Tarefas T1-T3 completas")     ║
+║  □  Pendências atualizadas                                      ║
+║  □  Commits feitos (se aplicável)                              ║
+╠══════════════════════════════════════════════════════════════════╣
+║ ⚠️  Se ANY □ = false → SALVA ANTES de iniciar nova fase.       ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+**Se qualquer □ = false:**
+- Parar
+- Salvar `.fdd/state.md` com informações da fase atual
+- Só então prosseguir para próxima fase
+
+---
+
+### Passo Explícito de Save (em cada fase)
+
+**Ao final de cada fase, seguir este checklist:**
+
+```
+[Estado da Fase: <nome>]
+□ .fdd/state.md atualizado com:
+  - Fase atual e status
+  - Tarefas completadas
+  - Pendências
+  - Arquivos alterados
+  - Commits (se houver)
+□ Próxima fase definida
+→ Fase seguinte pode começar
+```
+
+---
+
+### Conteúdo do state.md
 
 Atualizar `.fdd/state.md` com:
 
@@ -319,7 +368,7 @@ Atualizar `.fdd/state.md` com:
 - testes executados e resultado
 - pendências e próximos passos
 
-State é fonte de continuidade entre sessões.
+**State é fonte de continuidade entre sessões.**
 
 ---
 
