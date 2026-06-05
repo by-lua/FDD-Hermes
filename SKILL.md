@@ -6,11 +6,14 @@ description: >-
   [Discuss*] → Specify → [Clarify*] → [Design*] → Tasks → Execute
   (com Gate dentro) → State. Comandos via /xfdd.
   Compliance Gate BLOQUEANTE antes de qualquer edit.
+  Autosave OBRIGATÓRIO entre fases.
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
   author: Lua (Hermes Agent)
-  version: 2.4.0
-  based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases)
+  version: 2.5.0
+  based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
+  v2.5-changes:
+    - "2026-06-05 — Artifact Enforcement (RPIV-PI insight): cada fase produz artifact que a próxima precisa. Sem artifact = bloqueia."
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -33,6 +36,7 @@ Todo o resto segue a mesma disciplina de execução:
 - Tasks rastreáveis
 - Execute com **Gate de validação obrigatório**
 - **Compliance Gate BLOQUEANTE antes de qualquer edit**
+- **Autosave OBRIGATÓRIO entre fases**
 - State atualizado ao final
 
 ---
@@ -83,6 +87,53 @@ Discovery → [Discuss*] → Specify → [Clarify*] → [Design*] → Tasks → 
 
 **Validate não é fase separada.**
 A validação acontece no **Execute**, no passo de **GATE CHECK**.
+
+### ⚠️ REGRA CRÍTICA — ARTIFACT ENFORCEMENT (RPIV-PI insight)
+
+**"The artifact one writes is the next one's input."**
+
+Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxima **PRECISA**. Sem artifact, não avanza.
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║  GATE: ARTIFACT CHECK — antes de iniciar próxima fase               ║
+╠══════════════════════════════════════════════════════════════════════╣
+║                                                                      ║
+║  Pipeline → Produz → Feeds → Próxima                               ║
+║                                                                      ║
+║  Discovery  → .fdd/state.md            → Specify                     ║
+║  Specify    → .fdd/features/<name>/spec.md → Tasks                   ║
+║  Tasks      → .fdd/features/<name>/tasks.md → Execute                ║
+║  Execute    → working-tree changes     → Validate                   ║
+║                                                                      ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  ⚠️  Se artifact da fase anterior NÃO EXISTE → BLOQUEIA.            ║
+║  ⚠️  Não pergunta. Não pula. Não implementa.                        ║
+║  ⚠️  Cria o artifact primeiro, depois avanza.                       ║
+╚══════════════════════════════════════════════════════════════════════╝
+```
+
+**Exemplo de Bloqueio:**
+
+```
+[ENFORCED] ✗ Execute BLOQUEADO
+
+Artifact necessário: .fdd/features/minha-feature/tasks.md (de Tasks)
+Artifact encontrado: ❌ NÃO EXISTE
+
+⚠️  Execute não pode rodar sem tasks.md.
+⚠️  Execute /xfdd tasks primeiro para criar o artifact.
+```
+
+```
+[ENFORCED] ✗ Tasks BLOQUEADO
+
+Artifact necessário: .fdd/features/minha-feature/spec.md (de Specify)
+Artifact encontrado: ❌ NÃO EXISTE
+
+⚠️  Tasks não pode rodar sem spec.md.
+⚠️  Execute /xfdd specify primeiro para criar o artifact.
+```
 
 ---
 
@@ -324,7 +375,7 @@ Não pode encerrar sem evidência de:
 ╔══════════════════════════════════════════════════════════════════╗
 ║  GATE: STATE SAVED — antes de iniciar nova fase                 ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  □  .fdd/state.md existe ║
+║  □  .fdd/state.md existe                                        ║
 ║  □  Última fase registrada (ex: "Tarefas T1-T3 completas")     ║
 ║  □  Pendências atualizadas                                      ║
 ║  □  Commits feitos (se aplicável)                              ║
@@ -449,6 +500,23 @@ Aguardando: decisão da Lua antes de editar
 
 ---
 
+## Enforcement Pattern (CRÍTICO)
+
+**O fluxo só funciona se AMBOS os gates estão ativos:**
+
+1. **Compliance Gate** — antes de cada edit (verifica spec, contexto, escopo)
+2. **State Saving Gate** — entre fases (verifica state atualizado)
+
+**Um sem o outro não funciona:**
+- Só Compliance Gate → agente pode "passar" mas state fica pendente
+- Só State Saving → agente pode salvar mas editar fora da spec
+
+**Teste de funcionamento:** o cenário Bug neste session provou: T-ID-5 foi bloqueado porque state não foi atualizado após T-ID-4. O Compliance Gate chamou atenção, mas o root cause era o State Saving Gate.
+
+**Resumo:** Ambos são obrigatórios. Compliance Gate sem State Saving = state fica para trás. State Saving sem Compliance Gate = edits fora da spec.
+
+---
+
 ## Pitfalls críticos
 
 - Pular spec por "mudança pequena"
@@ -457,7 +525,9 @@ Aguardando: decisão da Lua antes de editar
 - Derivar escopo quando a Lua pedir ajuste novo
 - Presumir requisito sem confirmação em caso ambíguo
 - **EDITAR sem passar no Compliance Gate — PARAR e verificar checklist primeiro**
-- **Fingir que passou no gate sem verificar os5 itens**
+- **Fingir que passou no gate sem verificar os 5 itens**
+- **EDITAR NO DIRETÓRIO ERRADO — editar SEMPRE no clone git (ex: ~/.pi/agent/git/github.com/by-lua/<REPO>/), nunca em ~/.hermes/profiles/luna/skills/ que não é git e não vai pro remote**
+- **Compliance Gate sem State Saving — state fica pendente entre fases**
 
 ---
 
@@ -473,3 +543,65 @@ Aguardando: decisão da Lua antes de editar
 - Fluxo interno segue disciplina L-Spec PI adaptiva
 - Discovery de projeto novo: 6 perguntas (enxuto)
 - Hermes tools: `agent-lsp` (não pi-cymbal)
+- Compliance Gate: bloqueante antes de cada tarefa (5 itens)
+
+---
+
+## Git Workflow — Onde editar
+
+**⚠️ CRÍTICO: Editar NO clone git, não no skills local.**
+
+O diretório `~/.hermes/profiles/luna/skills/` **NÃO é git**. Patches ali não sobem pro remote.
+
+Estrutura correta:
+
+```
+~/.pi/agent/git/github.com/by-lua/<REPO>/   ← CLONE GIT (edit here)
+  └── .git/
+  └── SKILL.md
+  └── skills/
+
+~/.hermes/profiles/luna/skills/              ← LOCAL ONLY (don't edit)
+  └── software-development/fdd/SKILL.md
+```
+
+**Ao trabalhar em projetos FDD:**
+1. Clone repo se não existir: `git clone https://github.com/by-lua/<REPO>.git`
+2. Editar NO clone (diretório com `.git/`)
+3. Commitar no clone
+4. Push via signet secret exec
+
+## Propagação de Skill — Após atualizar master (VPS)
+
+**Quando a skill FDD for atualizada (nova versão no repo `by-lua/FDD-Hermes`), propagar para TODOS os perfis:**
+
+```
+Perfis com FDD (verificar todos):
+- /root/.hermes/skills/software-development/fdd/          (global)
+- /root/.hermes/profiles/luna/skills/software-development/fdd/
+- /root/.hermes/profiles/kira/skills/software-development/fdd/
+- /root/.hermes/profiles/kira2/skills/software-development/fdd/
+```
+
+**Após atualizar o repo Git:**
+```bash
+# Copiar do clone git para todos os perfis
+cp /root/.hermes/profiles/luna/home/.pi/agent/git/github.com/by-lua/FDD-Hermes/SKILL.md \
+   /root/.hermes/skills/software-development/fdd/SKILL.md
+
+cp /root/.hermes/profiles/luna/home/.pi/agent/git/github.com/by-lua/FDD-Hermes/SKILL.md \
+   /root/.hermes/profiles/kira/skills/software-development/fdd/SKILL.md
+
+cp /root/.hermes/profiles/luna/home/.pi/agent/git/github.com/by-lua/FDD-Hermes/SKILL.md \
+   /root/.hermes/profiles/kira2/skills/software-development/fdd/SKILL.md
+```
+
+**Verificar versões:**
+```bash
+grep -m1 "version:" /root/.hermes/skills/software-development/fdd/SKILL.md
+grep -m1 "version:" /root/.hermes/profiles/luna/skills/software-development/fdd/SKILL.md
+grep -m1 "version:" /root/.hermes/profiles/kira/skills/software-development/fdd/SKILL.md
+grep -m1 "version:" /root/.hermes/profiles/kira2/skills/software-development/fdd/SKILL.md
+```
+
+**Regra:** após qualquer update na FDD, verificar e propagar para todos os perfis antes de considerar a tarefa concluída.
