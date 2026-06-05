@@ -104,9 +104,9 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ║  Pipeline → Produz → Feeds → Próxima                               ║
 ║                                                                      ║
 ║  Discovery  → .fdd/state.md           → Research                   ║
-║  Research   → .fdd/features/[name]/research.md → Specify             ║
-║  Specify    → .fdd/features/[name]/spec.md  → Tasks                   ║
-║  Tasks      → .fdd/features/<name>/tasks.md → Execute                ║
+║  Research   → features/[name]/research.md → Specify                ║
+║  Specify    → features/[name]/spec.md  → Tasks                     ║
+║  Tasks      → features/[name]/tasks.md → Execute                  ║
 ║  Execute    → working-tree changes     → Validate                   ║
 ║                                                                      ║
 ╠══════════════════════════════════════════════════════════════════════╣
@@ -121,7 +121,7 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ```
 [ENFORCED] ✗ Execute BLOQUEADO
 
-Artifact necessário: .fdd/features/minha-feature/tasks.md (de Tasks)
+Artifact necessário: features/minha-feature/tasks.md (de Tasks)
 Artifact encontrado: ❌ NÃO EXISTE
 
 ⚠️  Execute não pode rodar sem tasks.md.
@@ -131,7 +131,7 @@ Artifact encontrado: ❌ NÃO EXISTE
 ```
 [ENFORCED] ✗ Tasks BLOQUEADO
 
-Artifact necessário: .fdd/features/minha-feature/spec.md (de Specify)
+Artifact necessário: features/minha-feature/spec.md (de Specify)
 Artifact encontrado: ❌ NÃO EXISTE
 
 ⚠️  Tasks não pode rodar sem spec.md.
@@ -167,6 +167,30 @@ O Hermes já tem `agent-lsp` configurado como MCP server (66 tools LSP). Use SOM
 **Bash grep/find SOLO quando:**
 - Precisa de output pipeado para outro comando shell
 - Casos pontuais que LSP não cobre
+
+---
+
+## ⚠️ CRÍTICO — Discovery é PERGUNTAS PARA O USUÁRIO
+
+**Discovery NÃO é eu escrevendo respostas sozinho.**
+
+O agente faz PERGUNTAS → usuário responde → agente salva em state.md → avança para próxima fase.
+
+**NUNCA:**
+- ❌ Inventar respostas de Discovery sem perguntar ao usuário
+- ❌ Pular para implementação durante Discovery
+- ❌ Despejar todas perguntas de uma vez (uma fase por vez, confirmar antes de continuar)
+
+**SEMPRE:**
+- ✓ Perguntar uma fase, esperar confirmação, continuar
+- ✓ Salvar resposta do usuário no state.md
+- ✓ Avançar para Research após confirmar Discovery completo
+
+**Exemplo de erro:**
+```
+❌ "O projeto é um sistema de checkout..." (eu inventei)
+✓ "Qual o objetivo do projeto?" (perguntei ao usuário)
+```
 
 ---
 
@@ -248,7 +272,7 @@ Sem clareza, não avança.
 
 ## Specify (obrigatório)
 
-Criar `.fdd/features/<feature>/spec.md` com:
+Criar `features/<feature>/spec.md` com:
 
 - Objetivo
 - Requisitos funcionais numerados e testáveis
@@ -282,7 +306,7 @@ impacto em dados/contratos.
 
 ## Tasks (obrigatório)
 
-Criar `.fdd/features/<feature>/tasks.md` com tarefas atômicas:
+Criar `features/<feature>/tasks.md` com tarefas atômicas:
 
 - o que fazer
 - onde fazer
@@ -309,7 +333,7 @@ Se escopo mudar no meio, pausar e **replanejar tasks**.
 ╔══════════════════════════════════════════════════════════════════╗
 ║  GATE: COMPLIANCE CHECK — antes de cada tarefa                 ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  □  .fdd/features/<feature>/spec.md existe                     ║
+║  □  features/<feature>/spec.md existe                     ║
 ║  □  spec.md foi lida e compreendida ("Contexto lido")         ║
 ║  □  Arquivos a editar estão listados na spec ou tasks          ║
 ║  □  Mudança proposta NÃO foge do escopo da spec                ║
@@ -426,6 +450,30 @@ Atualizar `.fdd/state.md` com:
 
 ---
 
+## Research — Análise do Codebase (NÃO perguntas ao usuário)
+
+**Research é OBRIGATÓRIO. Não pula. Não pergunta usuário.**
+
+Research analiza o **código existente**, não faz perguntas para o usuário.
+
+| SEM Research | COM Research |
+|--------------|--------------|
+| "Invventa" soluções que não existem | Vê como código similar foi feito |
+| Spec pede algo impossível no codebase | Spec sabe o que é possível |
+| Ignora patterns e convenções | Respeita arquitetura existente |
+| Código conflita com código antigo | Integra corretamente |
+
+**Research pergunta ao CÓDIGO, não ao usuário:**
+- "Onde está implementada essa feature?"
+- "Quem chama essa função?"
+- "Qual pattern esse código usa?"
+
+**Output:** `features/[name]/research.md`
+
+**Sem artifact = BLOQUEIA Specify.**
+
+---
+
 ## Reverse (`/xfdd reverse`)
 
 Para projeto existente sem specs:
@@ -522,6 +570,8 @@ Aguardando: decisão da Lua antes de editar
 
 ## Pitfalls críticos
 
+- **Discovery: NÃO inventar respostas** — fazer perguntas ao usuário, esperar resposta, salvar
+- **Research: NÃO perguntar ao usuário** — analisar o código existente
 - Pular spec por "mudança pequena"
 - Encerrar sem teste rodado
 - Não atualizar state
@@ -531,6 +581,8 @@ Aguardando: decisão da Lua antes de editar
 - **Fingir que passou no gate sem verificar os 5 itens**
 - **EDITAR NO DIRETÓRIO ERRADO — editar SEMPRE no clone git (ex: ~/.pi/agent/git/github.com/by-lua/<REPO>/), nunca em ~/.hermes/profiles/luna/skills/ que não é git e não vai pro remote**
 - **Compliance Gate sem State Saving — state fica pendente entre fases**
+- **NÃO existe pasta `fixes/`** — bugs e ajustes usam prefixo `fix-`/`bug-` em `features/`
+- **Feature existente = atualizar docs e continuar** — não reiniciar pipeline
 
 ---
 
