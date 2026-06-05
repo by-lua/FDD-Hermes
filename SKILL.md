@@ -3,17 +3,17 @@ name: fdd
 description: >-
   Feature-Driven Development (FDD) para Hermes, com motor adaptativo
   inspirado no L-Spec PI: Discovery com classificação automática →
-  [Discuss*] → Specify → [Clarify*] → [Design*] → Tasks → Execute
+  [Discuss*] → Research → Specify → [Clarify*] → [Design*] → Tasks → Execute
   (com Gate dentro) → State. Comandos via /xfdd.
   Compliance Gate BLOQUEANTE antes de qualquer edit.
   Autosave OBRIGATÓRIO entre fases.
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
   author: Lua (Hermes Agent)
-  version: 2.5.0
+  version: 2.6.0
   based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
-  v2.5-changes:
-    - "2026-06-05 — Artifact Enforcement (RPIV-PI insight): cada fase produz artifact que a próxima precisa. Sem artifact = bloqueia."
+  v2.6-changes:
+    - "2026-06-05 — Research obrigatório (RPIV-PI insight): análise do codebase antes de Specify. Impede 'inventar' soluções que não existem."
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -52,10 +52,10 @@ Todo o resto segue a mesma disciplina de execução:
 
 ---
 
-## Pipeline canônico (igual ao L-Spec PI, adaptado)
+## Pipeline Adaptativo
 
 ```
-Discovery → [Discuss*] → Specify → [Clarify*] → [Design*] → Tasks → Execute
+Discovery → [Discuss*] → Research → Specify → [Clarify*] → [Design*] → Tasks → Execute
 ```
 
 ```
@@ -63,6 +63,7 @@ Discovery → [Discuss*] → Specify → [Clarify*] → [Design*] → Tasks → 
 │ FASE       │ QUANDO RODA                                             │
 ├────────────┼──────────────────────────────────────────────────────────┤
 │ Discovery  │ SEMPRE                                                  │
+│ Research   │ SEMPRE (OBRIGATÓRIO) — análise do codebase              │
 │ Discuss    │ OPCIONAL — só se área cinzenta/ambígua                  │
 │ Specify    │ SEMPRE (OBRIGATÓRIO)                                    │
 │ Clarify    │ OPCIONAL — só se ambiguidade nos requisitos             │
@@ -73,9 +74,10 @@ Discovery → [Discuss*] → Specify → [Clarify*] → [Design*] → Tasks → 
 ```
 
 **NUNCA:**
-- Pular fases obrigatórias
+- Pular fases obrigatórias (especialmente Research!)
 - Quick mode
 - Auto-sizing
+- Implementar sem analisar codebase primeiro
 
 **SEMPRE:**
 - Reler spec antes de implementar
@@ -92,7 +94,7 @@ A validação acontece no **Execute**, no passo de **GATE CHECK**.
 
 **"The artifact one writes is the next one's input."**
 
-Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxima **PRECISA**. Sem artifact, não avanza.
+Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxima **PRECISA**. Sem artifact, não avanza. Ver [references/rpiv-pi-artifact-enforcement.md](references/rpiv-pi-artifact-enforcement.md).
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
@@ -101,8 +103,9 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ║                                                                      ║
 ║  Pipeline → Produz → Feeds → Próxima                               ║
 ║                                                                      ║
-║  Discovery  → .fdd/state.md            → Specify                     ║
-║  Specify    → .fdd/features/<name>/spec.md → Tasks                   ║
+║  Discovery  → .fdd/state.md           → Research                   ║
+║  Research   → .fdd/features/[name]/research.md → Specify             ║
+║  Specify    → .fdd/features/[name]/spec.md  → Tasks                   ║
 ║  Tasks      → .fdd/features/<name>/tasks.md → Execute                ║
 ║  Execute    → working-tree changes     → Validate                   ║
 ║                                                                      ║
