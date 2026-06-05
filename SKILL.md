@@ -9,13 +9,10 @@ description: >-
   Autosave OBRIGATÓRIO entre fases.
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
-  author: Lua (Hermes Agent)
-  version: 2.7.2
+  version: 2.8.0
   based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
-  v2.7-changes:
-    - "2026-06-05 — Estrutura corrigida: .specs/project/{STATE,PROJECT,ROADMAP}.md + .specs/features/[name]/ (igual L-Spec PI). Pipeline sequencial fixo como RPIV. Research = análise do codebase (não perguntas ao usuário). Single entry point /xfdd [request] com auto-advance. Discovery projeto novo: 17 perguntas em 6 fases. Bugs/fixes em features/ com prefixo fix-/bug-."
-    - "2026-06-05 v2.7.2 — SPEC Enforcement: mudança ocorre → verificar se spec existe em .specs/features/[name]/. Se sim → atualizar existente. Se não → criar nova. NUNCA criar spec duplicada."
-    - "2026-06-05 v2.7.2 — Project docs: mudanças estruturais devem atualizar .specs/project/{PROJECT.md, ROADMAP.md}."
+  v2.8-changes:
+    - "2026-06-05 — Design Reference Enforcement: antes de implementar, verificar se design.md existe em .specs/features/[name]/. Se existir, LER e SEGUIR. Compliance Gate agora checa design.md."
 ---
 
 # FDD — Feature-Driven Development (Hermes)
@@ -46,10 +43,32 @@ Todo o fluxo segue a disciplina completa:
 
 - `/xfdd new` → Projeto novo
 - `/xfdd feature` → Nova feature em projeto existente
-- `/xfdd reverse` → Projeto existente sem specs (survey)
+- `/xfdd reverse` → Projeto existente sem specs (survey do código → spec)
 - `reverse` (texto solto) → atalho para fluxo reverse
 
 > Tudo via `/xfdd`. Comando antigo `/fdd` também funciona via alias.
+
+---
+
+## Fluxo Reverse (Código Existente → Spec)
+
+Quando projeto existe mas não tem `.specs/`:
+
+```
+1. Research (análise do codebase)
+   → Ler código, mapear estrutura, entender padrões
+   → Documentar findings
+
+2. Specify (mapeamento)
+   → Criar .specs/project/{PROJECT,STATE,ROADMAP}.md
+   → Criar .specs/features/[name]/spec.md (mapeado do código)
+   → Criar .specs/features/[name]/tasks.md (tarefas identificadas)
+
+3. Tasks (opcional)
+   → Se houver melhorias claras no código
+```
+
+**Exemplo de reverse aplicado:** `/bots/Projects/promos-automacao-codex/` mapeado em 2026-06-05.
 
 ---
 
@@ -106,7 +125,8 @@ Inspirado no RPIV-PI pipeline — cada fase **PRODUZ um artifact** que a próxim
 ║                                                                      ║
 ║  Discovery  → .specs/project/STATE.md  → Research                   ║
 ║  Research   → .specs/features/[name]/research.md → Specify          ║
-║  Specify    → .specs/features/[name]/spec.md  → Tasks                ║
+║  Specify    → .specs/features/[name]/spec.md  → Design (opcional) ║
+║  Design     → .specs/features/[name]/design.md → Tasks (se existir) ║
 ║  Tasks      → .specs/features/[name]/tasks.md → Execute              ║
 ║  Execute    → working-tree changes     → Validate                   ║
 ║                                                                      ║
@@ -367,8 +387,10 @@ Se escopo mudar no meio, pausar e **replanejar tasks**.
 ╔══════════════════════════════════════════════════════════════════╗
 ║  GATE: COMPLIANCE CHECK — antes de cada tarefa                 ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  □  .specs/features/<feature>/spec.md existe                     ║
+║  □  .specs/features/<feature>/spec.md existe ║
 ║  □  spec.md foi lida e compreendida ("Contexto lido")         ║
+║  □  .specs/features/<feature>/design.md existe (se houver)       ║
+║  □  design.md foi lido e compreendido (se existir)              ║
 ║  □  Arquivos a editar estão listados na spec ou tasks          ║
 ║  □  Mudança proposta NÃO foge do escopo da spec                ║
 ║  □  .specs/project/STATE.md foi atualizado na última fase                ║
@@ -543,6 +565,7 @@ Se houver models ORM, validar consistência com schema real quando aplicável.
 - **State saving = `.specs/project/STATE.md` — OBRIGATÓRIO entre fases, não opcional**
 - **SPEC Enforcement: mudança ocorre → verificar se já existe spec em `.specs/features/[name]/`. Se sim → atualizar existente. Se não → criar nova. NUNCA criar spec duplicada.**
 - **Project docs: mudanças estruturais → atualizar `.specs/project/PROJECT.md` e `.specs/project/ROADMAP.md`.**
+- **Design Reference: antes de implementar, verificar se `.specs/features/[name]/design.md` existe. Se existir → LER e SEGUIR. NUNCA ignorar design reference.**
 ---
 
 ## Formato de resposta operacional
