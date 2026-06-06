@@ -9,8 +9,17 @@ description: >-
   Autosave OBRIGATÓRIO entre fases.
 trigger: xfdd,reverse,novo projeto,feature,bug,levantamento,monetização,produto,pricing,preço,plano,assinatura
 metadata:
-  version: 2.8.0
-  based-on: l-spec PI v2 — sincronizado Hermes (agent-lsp, pipeline table, NUNCA rules, /xfdd commands, Compliance Gate bloqueante, Autosave obrigatório entre fases, Artifact Enforcement)
+  version: 2.13.0
+  based-on: l-spec PI v3 — sincronizado Hermes (Compliance Gate bloqueante, Artifact Enforcement, LSquad enforcement layer, Orchestrator delegation model, Quick Mode e Auto-sizing REMOVIDOS, /xfdd commands, State save obrigatório entre fases)
+  v2.12-changes:
+    - "2026-06-06 — lspec-subagents: READ_ONLY_TOOLS com cymbal_*/lsp_* nativos PI.dev (pi-cymbal/pi-lsp-tools eram fake). Explorer's prompt atualizado. Commit e8fbe7d."
+    - "2026-06-06 — Pipeline v3: gates explícitos no description, Quick Mode e Auto-sizing fora do fluxo."
+  v2.10-changes:
+    - "2026-06-06 — Git author CORRIGIDO: usar 'by-lua <noelia.assis@by-lua.com>' (só username, sem nome completo). Formato longo 'by-lua/BY-LUA - NOELIA.ASSIS' mostra como texto no GitHub, não linka ao user. Adicionado Git Workflow com ordem correta de correção."
+    - "2026-06-06 — Intro README: L-Spec serve para projetos novos E existentes (não só novos). Reverse mapeia código existente antes de implementar."
+    - "2026-06-06 — Propagação: v2.10.0 copiada para global, kira, kira2 após update."
+  v2.9-changes:
+    - "2026-06-06 — README Sync: após update no SKILL.md, verificar paridade do README.md na mesma sessão. Adicionado references/readme-sync.md com padrão de manutenção."
   v2.8-changes:
     - "2026-06-05 — Design Reference Enforcement: antes de implementar, verificar se design.md existe em .specs/features/[name]/. Se existir, LER e SEGUIR. Compliance Gate agora checa design.md."
 ---
@@ -22,6 +31,8 @@ metadata:
 ## Objetivo desta versão
 
 Esta versão é o **L-Spec PI adaptado para o Hermes**, com o mesmo pipeline sequencial fixo.
+
+**Serve para projetos novos E existentes.** Não sabe por onde começar? O FDD mapeia o código existente, constrói a documentação e só então implementa. Tudo começa com spec, nunca com código.
 
 Todo o fluxo segue a disciplina completa:
 
@@ -91,7 +102,45 @@ Discovery → [Discuss*] → Research → Specify → [Clarify*] → [Design*] �
 │ Tasks      │ SEMPRE                                                  │
 │ Execute    │ SEMPRE                                                  │
 └────────────┴──────────────────────────────────────────────────────────┘
+
+---
+
+## Gates Bloqueantes
+
+### Compliance Gate (antes de QUALQUER edit)
+
 ```
+┌────────────────────────────────────────────────────────────────┐
+│ COMPLIANCE GATE CHECKLIST                                      │
+├────────────────────────────────────────────────────────────────┤
+│ □ spec.md existe                                                │
+│ □ spec.md foi lida e compreendida                              │
+│ □ design.md existe e foi lido (se houver)                       │
+│ □ Arquivos a editar estão listados                              │
+│ □ Mudança NÃO foge do escopo                                    │
+│ □ State atualizado na última fase                               │
+└────────────────────────────────────────────────────────────────┘
+
+→ Se qualquer □ = false → BLOQUEIA. Não edita.
+```
+
+### State Saved Gate (entre fases)
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ STATE SAVED GATE                                               │
+├────────────────────────────────────────────────────────────────┤
+│ □ .specs/project/STATE.md existe                               │
+│ □ Última fase registrada                                        │
+│ □ Pendências atualizadas                                       │
+└────────────────────────────────────────────────────────────────┘
+
+→ Se qualquer □ = false → SALVA ANTES de iniciar nova fase.
+```
+
+**AMBOS os gates são obrigatórios.** Compliance Gate sem State Saving = state fica para trás. State Saving sem Compliance Gate = edits fora da spec.
+
+---
 
 **NUNCA:**
 - Pular fases obrigatórias (especialmente Research!)
@@ -167,7 +216,9 @@ Artifact encontrado: ❌ NÃO EXISTE
 
 **Code Navigation — NUNCA use bash grep/find para navegação de código**
 
-O Hermes já tem `agent-lsp` configurado como MCP server (66 tools LSP). Use SOMENTE:
+O Hermes tem `agent-lsp` configurado como MCP server (66 tools LSP). Use SOMENTE:
+
+> ⚠️ **PI packages (pi-cymbal, pi-lsp-tools, pi-mermaid) NÃO são tools reais** — são referência documental nos SKILLs. Nenhum código os chama. Ver `references/pi-packages-reference-only.md`.
 
 **Estrutura do repo:**
 - `mcp_agent_lsp_list_symbols` → symbols de um arquivo (classes, funções, métodos)
@@ -566,6 +617,10 @@ Se houver models ORM, validar consistência com schema real quando aplicável.
 - **SPEC Enforcement: mudança ocorre → verificar se já existe spec em `.specs/features/[name]/`. Se sim → atualizar existente. Se não → criar nova. NUNCA criar spec duplicada.**
 - **Project docs: mudanças estruturais → atualizar `.specs/project/PROJECT.md` e `.specs/project/ROADMAP.md`.**
 - **Design Reference: antes de implementar, verificar se `.specs/features/[name]/design.md` existe. Se existir → LER e SEGUIR. NUNCA ignorar design reference.**
+
+**Support files:**
+- `references/design-reference-template.md` — template para criar design.md completos
+- `references/spec-enforcement.md` — quando criar vs atualizar spec
 ---
 
 ## Formato de resposta operacional
@@ -627,6 +682,66 @@ Aguardando: decisão da Lua antes de editar
 
 ---
 
+## Git Workflow — Manutenção do Repo FDD
+
+### Config local (FAZER PRIMEIRO, antes de qualquer commit)
+```bash
+git config --local user.name "by-lua"
+git config --local user.email "noelia.assis@by-lua.com"
+```
+**Sem isso, commits vão com author errado e o GitHub não linka ao user real.**
+
+### Author errado no commit — ordem correta
+Se o repo já tem commits com author errado (`by-lua/BY-LUA - NOELIA.ASSIS` em vez de `by-lua`):
+```bash
+# 1. Config local (evita que proximos commits repitam o erro)
+git config --local user.name "by-lua"
+git config --local user.email "noelia.assis@by-lua.com"
+
+# 2. Amend do commit mais recente com author correto
+git commit --amend --author="by-lua <noelia.assis@by-lua.com>" --no-edit
+
+# 3. Se remote avançou → rebase
+git pull origin main --rebase
+
+# 4. Force push (author mudou, SHA mudou)
+git push --force origin main
+```
+**⚠️ A ordem importa:** amend ANTES do rebase. Se rebasear primeiro e depois amendar, o SHA do amend fica "solto" depois do rebase e o remote rejeita.
+
+### Push rejeitado (concurrent remote work)
+```bash
+git pull origin main --rebase && git push origin main
+```
+**Sempre** tentar rebase antes de force-push. Só usar `--force` se rebase falhar e você tiver certeza do que está fazendo.
+
+### GitHub author linkado vs texto
+| Author format | GitHub mostra |
+|---------------|--------------|
+| `by-lua <noelia.assis@by-lua.com>` | ✅ Avatar + nome linkado ao user |
+| `by-lua/BY-LUA - NOELIA.ASSIS <noelia.assis@by-lua.com>` | ❌ Texto cru, sem link |
+
+### Sync README ↔ SKILL.md
+Quando SKILL.md é atualizado, o README do repo **deve ser sincronizado** na mesma sessão:
+1. Atualizar SKILL.md (conteúdo completo)
+2. Atualizar README.md (resumo executivo + gates + comandos)
+3. Commitar ambos no mesmo commit ou em commits sequenciais
+4. Pushar juntos
+
+O README é a vitrine do repo — não pode estar defasado do SKILL.md.
+
+### Ordem de push (múltiplos repos)
+Se atualizar múltiplos repos em paralelo:
+```bash
+# Commitar cada um, depois pushar um por um
+cd /repo1 && git push origin main
+cd /repo2 && git push origin main
+cd /repo3 && git push origin main
+```
+Pushar **um por um** para identificar exatamente qual repo falhou se houver erro.
+
+---
+
 ## Pitfalls críticos
 
 - **Discovery: NÃO inventar respostas** — fazer perguntas ao usuário, esperar resposta, salvar
@@ -643,14 +758,21 @@ Aguardando: decisão da Lua antes de editar
 - **NÃO existe pasta `fixes/`** — bugs e ajustes usam prefixo `fix-`/`bug-` em `features/`
 - **Feature existente = atualizar docs e continuar** — não reiniciar pipeline, não recriar estrutura
 - **Estrutura de feature é `.specs/features/[name]/`** — não `.fdd/features/[name]/`. Testado e confirmado em produção: artefatos (spec.md, tasks.md, research.md) vão dentro de `.specs/features/[name]/`, state do projeto vai em `.specs/project/STATE.md`
+- **README drift** — SKILL.md pode ganhar gates/feature mas README ficar para trás. Após update no SKILL.md, SEMPRE verificar paridade do README.md na mesma sessão. Ver `references/readme-sync.md`.
+- **PI packages como tools reais** — Não tratar `pi-cymbal`, `pi-lsp-tools`, `pi-mermaid` como tools disponíveis. São referência documental nos SKILLs, nenhum código os chama de verdade. Usar `pi-lsp` (PI.dev) ou `agent-lsp` (Hermes) para navegação real. Ver `references/pi-packages-reference-only.md`.
+- **Documentar tools sem validar primeiro** — Antes de adicionar referência a uma tool/package em SKILLs ou README, VALIDAR localmente com `pi --print "tool_name arg"`. Não commitar documentação de tool não testada. Ciclo: identificar problema → validar tool real com teste local → só então atualizar SKILLs/docs → commitar. Ver `references/tool-validation-before-commit.md`.
+- **Git author com nome completo** — usar `by-lua/BY-LUA - NOELIA.ASSIS` mostra como texto no GitHub (não linka ao user). O formato correto é `by-lua <noelia.assis@by-lua.com>` (só username + email). Configurar ANTES de commitar para evitar ter que amendar depois.
 
 ---
 
 ## Referências de operação
 
 - `references/skill-rollout-global-perfis.md` — checklist para sincronizar atualização da FDD entre global e perfis e validar consistência.
-- `references/platform-tooling-mapping.md` — mapeamento PI vs Hermes para tools de navegação de código (pi-cymbal vs agent-lsp). Sempre consultar antes de instruir tools em skills.
+- `references/platform-tooling-mapping.md` — mapeamento PI vs Hermes para tools de navegação de código. Sempre consultar antes de instruir tools em skills.
+- `references/pi-packages-reference-only.md` — alerta: pi-cymbal, pi-lsp-tools, pi-mermaid são DOCUMENTAÇÃO apenas, não tools reais integradas. Nenhum código os chama.
+- `references/tool-validation-before-commit.md` — padrão: validar tools com `pi --print` antes de commitar docs sobre packages/tools.
 - `references/compliance-gate-pattern.md` — **PADRÃO OBRIGATÓRIO**: Compliance Gate bloqueante inspirado em opensquad/aiox-core/agentic-os. Verificar antes de toda implementação.
+- `references/readme-sync.md` — Padrão de manutenção: após update no SKILL.md, verificar paridade do README.md. Repos affected: FDD-Hermes, lspec-pi, l-spec-agentes, lspec-subagents.
 
 ## Compatibilidade e transição
 
@@ -685,6 +807,8 @@ Estrutura correta:
 2. Editar NO clone (diretório com `.git/`)
 3. Commitar no clone
 4. Push via signet secret exec
+5. **Se push rejeitado** → `git pull origin <branch> --rebase && git push origin <branch>` (rebase, não merge)
+6. **Após update de pipeline** → verificar paridade README.md ↔ SKILL.md (ver `references/readme-sync.md`)
 
 ## Propagação de Skill — Após atualizar master (VPS)
 
