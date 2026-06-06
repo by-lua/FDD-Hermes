@@ -1,6 +1,8 @@
 # FDD-Hermes
 
-**Feature-Driven Development v2.8.0** — Spec-first, rastreável, validado. Nada fora da spec.
+**Feature-Driven Development v2.8.0** — **projetos novos E existentes**.
+
+Não sabe por onde começar? O FDD mapeia o código existente, constrói a documentação e só então implementa. Tudo começa com spec, nunca com código.
 
 Pipeline adaptativo inspirado no L-Spec PI, com Compliance Gate bloqueante e autosave obrigatório entre fases.
 
