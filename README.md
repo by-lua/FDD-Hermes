@@ -86,6 +86,35 @@ Cada fase **PRODUZ** um artifact que a próxima **PRECISA**. Sem artifact, bloqu
 
 ---
 
+## Qual Comando Usar
+
+### Single Entry Point — `/xfdd`
+
+O comando `/xfdd` é o **único ponto de entrada**. Ele auto-detecta o tipo de projeto e executa o pipeline completo.
+
+**Não precisa escolher comando por fase.** O sistema avança automaticamente.
+
+| Cenário | Comando | O que acontece |
+|---------|---------|----------------|
+| Projeto novo | `/xfdd new` | Discovery completo (17 perguntas em 6 fases) → Research → Specify → ... |
+| Feature em projeto existente | `/xfdd feature` | Discovery focado → Research → Specify → ... |
+| Bug em projeto existente | `/xfdd corrigir bug de...` | Discovery curto (3 perguntas) → Research → Tasks → Execute |
+| Projeto existente sem specs | `/xfdd reverse` | **Reverse mode** — survey do código → spec gerada automaticamente |
+
+> `/fdd` também funciona como alias de `/xfdd`.
+
+### Reverse — Quando Usar
+
+Use `/xfdd reverse` quando:
+
+- Projeto existe mas **não tem `.specs/`**
+- Precisa entender estrutura antes de mexer
+- Vai接手 projeto de outra pessoa
+
+O reverse escaneia o código, gera `.specs/project/` e `.specs/features/[name]/` automaticamente.
+
+---
+
 ## Comandos
 
 | Comando | Descrição |
